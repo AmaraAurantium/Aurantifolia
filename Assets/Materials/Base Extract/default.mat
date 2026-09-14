@@ -42,7 +42,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _RimThickness: 0.05
+    - _RimThickness: 2
+    - _RimThicknessMultiplier: 0.001
     m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1

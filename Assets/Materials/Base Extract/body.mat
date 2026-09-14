@@ -114,7 +114,8 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimThickness: 0.05
+    - _RimThickness: 2
+    - _RimThicknessMultiplier: 0.001
     - _SampleGI: 0
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0

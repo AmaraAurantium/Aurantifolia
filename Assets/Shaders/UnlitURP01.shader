@@ -7,8 +7,9 @@ Shader "Custom/UnlitURP01"
         _ShadeTex("Shade Texture", 2D) = "black" {} //unimplemented
 
         //Rimlight Settings 
-        _RimThickness("Rimlight Thickness", Float) = 0.02 //unimplemented
-        _RimColor("Rimlight Color", Color) = (1, 1, 1, 1) //unimplemented
+        _RimThickness("Rimlight Thickness", Float) = 1
+        _RimThicknessMultiplier("Rimlight Thickness Multiplier", Float) = 0.001
+        _RimColor("Rimlight Color", Color) = (1, 1, 1, 1) 
     }
 
     SubShader
@@ -20,7 +21,15 @@ Shader "Custom/UnlitURP01"
         
         Pass
         {
+            Name "Regular Pass"
+            Tags {
+                "LightMode" = "UniversalForward"
+                "Queue" = "Geometry"
+
+                }
+
             Cull Off
+
             HLSLPROGRAM
 
             #pragma vertex vert
@@ -45,6 +54,9 @@ Shader "Custom/UnlitURP01"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
+                half4 _RimColor;
+                float _RimThickness;
+                float _RimThicknessMultiplier;
                 float4 _BaseTex_ST;
             CBUFFER_END
 
@@ -67,8 +79,14 @@ Shader "Custom/UnlitURP01"
         //Rimlight Pass through Inverse hull
         Pass
         {
+            Name "Rimlight Pass"
+            Tags {
+                "LightMode" = "SRPDefaultUnlit" 
+                "Queue" = "Geometry - 1"
+                }
+
             Cull Front
-            ZTest Always
+
             HLSLPROGRAM
 
             #pragma vertex vert
@@ -93,15 +111,17 @@ Shader "Custom/UnlitURP01"
             SAMPLER(sampler_BaseTex);
 
             CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
                 half4 _RimColor;
                 float _RimThickness;
+                float _RimThicknessMultiplier;
                 float4 _BaseTex_ST;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
-                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + (IN.normal * _RimThickness)) ;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + (IN.normal * _RimThickness  * _RimThicknessMultiplier)) ;
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
                 return OUT;
             }
