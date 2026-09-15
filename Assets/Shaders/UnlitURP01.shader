@@ -6,8 +6,11 @@ Shader "Custom/UnlitURP01"
         [MainTexture] _BaseTex("Lit Texture", 2D) = "white" {}
         _ShadeTex("Shade Texture", 2D) = "black" {} //unimplemented
 
+        //Metallic, Rimlight, Reflection mask
+        _EffectTex("Effects Texture", 2D) = "green"{} //unimplemented
+
         //Rimlight Settings 
-        _RimThickness("Rimlight Thickness", Float) = 1
+        _RimThickness("Rimlight Thickness", Float) = 5
         _RimThicknessMultiplier("Rimlight Thickness Multiplier", Float) = 0.001
         _RimColor("Rimlight Color", Color) = (1, 1, 1, 1) 
     }
@@ -58,6 +61,7 @@ Shader "Custom/UnlitURP01"
                 float _RimThickness;
                 float _RimThicknessMultiplier;
                 float4 _BaseTex_ST;
+                float4 _EffectTex_ST;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
@@ -109,6 +113,8 @@ Shader "Custom/UnlitURP01"
 
             TEXTURE2D(_BaseTex);
             SAMPLER(sampler_BaseTex);
+            TEXTURE2D(_EffectTex);
+            SAMPLER(sampler_EffectTex);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -116,12 +122,21 @@ Shader "Custom/UnlitURP01"
                 float _RimThickness;
                 float _RimThicknessMultiplier;
                 float4 _BaseTex_ST;
+                float4 _EffectTex_ST;
             CBUFFER_END
 
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
-                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + (IN.normal * _RimThickness  * _RimThicknessMultiplier)) ;
+                half4 mask = SAMPLE_TEXTURE2D_LOD(
+                    _EffectTex,
+                    sampler_EffectTex,
+                    IN.uv,
+                    0
+                    );
+                float rimMask = mask.g;
+                float3 extrusionAmount = IN.normal * _RimThickness  * _RimThicknessMultiplier * rimMask;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + extrusionAmount) ;
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
                 return OUT;
             }
