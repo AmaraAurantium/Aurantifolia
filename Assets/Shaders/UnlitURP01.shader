@@ -5,6 +5,7 @@ Shader "Custom/UnlitURP01"
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [MainTexture] _BaseTex("Lit Texture", 2D) = "white" {}
         _ShadeTex("Shade Texture", 2D) = "black" {} //unimplemented
+        _ShadeThresh("Shade Threshold", Float) = 0.3
 
         //Metallic, Rimlight, Reflection mask
         _EffectTex("Effects Texture", 2D) = "green"{} //unimplemented
@@ -12,7 +13,8 @@ Shader "Custom/UnlitURP01"
         //Rimlight Settings 
         _RimThickness("Rimlight Thickness", Float) = 5
         _RimThicknessMultiplier("Rimlight Thickness Multiplier", Float) = 0.001
-        _RimColor("Rimlight Color", Color) = (1, 1, 1, 1) 
+        _RimColor("Rimlight Color", Color) = (1, 1, 1, 1)
+        _LineColor("Secondary Line Color", Color) = (1, 1, 1, 0) 
     }
 
     SubShader
@@ -39,43 +41,81 @@ Shader "Custom/UnlitURP01"
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+                float3 normalOS : NORMAL;
             };
 
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 normalWS : TEXCOORD1;
             };
 
             TEXTURE2D(_BaseTex);
             SAMPLER(sampler_BaseTex);
+            TEXTURE2D(_ShadeTex);
+            SAMPLER(sampler_ShadeTex);
+            TEXTURE2D(_EffectTex);
+            SAMPLER(sampler_EffectTex);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half4 _RimColor;
+                half4 _LineColor;
+                float _ShadeThresh;
                 float _RimThickness;
                 float _RimThicknessMultiplier;
                 float4 _BaseTex_ST;
+                float4 _ShadeTexST_ST;
                 float4 _EffectTex_ST;
             CBUFFER_END
 
+            //Vertex Shader
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
+                OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
                 return OUT;
             }
 
+            //Fragment Shader
             half4 frag(Varyings IN) : SV_Target
             {
-                half4 color = SAMPLE_TEXTURE2D(_BaseTex, sampler_BaseTex, IN.uv) * _BaseColor;
-                return color;
+                //base lit color
+                half4 baseColor = SAMPLE_TEXTURE2D(
+                                _BaseTex,
+                                sampler_BaseTex,
+                                IN.uv
+                                ) * _BaseColor;
+                // shadow color
+                half4 shadowColor = SAMPLE_TEXTURE2D(
+                                _ShadeTex,
+                                sampler_ShadeTex,
+                                IN.uv
+                                ) * _BaseColor;
+                //calculating dot product between mainlight and vertex normal
+                Light mainLight = GetMainLight();
+                float3 vertexNormal = normalize(IN.normalWS);
+                float3 lightDirection = normalize(mainLight.direction);
+                float VNdotLD = saturate(dot(vertexNormal, lightDirection));
+                float lightValue = step(_ShadeThresh, VNdotLD);
+
+                //combined shadow and base color
+                half4 finalColor = lerp(
+                    shadowColor,
+                    baseColor,
+                    lightValue
+                    );
+
+                return finalColor;
             }
             ENDHLSL
         }
@@ -97,31 +137,38 @@ Shader "Custom/UnlitURP01"
             #pragma fragment frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
-                float3 normal : NORMAl;
+                float3 normalOS : NORMAl;
             };
 
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float3 normalWS : TEXCOORD1;
             };
 
             TEXTURE2D(_BaseTex);
             SAMPLER(sampler_BaseTex);
+            TEXTURE2D(_ShadeTex);
+            SAMPLER(sampler_ShadeTex);
             TEXTURE2D(_EffectTex);
             SAMPLER(sampler_EffectTex);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half4 _RimColor;
+                half4 _LineColor;
+                float _ShadeThresh;
                 float _RimThickness;
                 float _RimThicknessMultiplier;
                 float4 _BaseTex_ST;
+                float4 _ShadeTexST_ST;
                 float4 _EffectTex_ST;
             CBUFFER_END
 
@@ -135,16 +182,28 @@ Shader "Custom/UnlitURP01"
                     0
                     );
                 float rimMask = mask.g;
-                float3 extrusionAmount = IN.normal * _RimThickness  * _RimThicknessMultiplier * rimMask;
+                float3 extrusionAmount = IN.normalOS * _RimThickness  * _RimThicknessMultiplier * rimMask;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + extrusionAmount) ;
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
+                OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
                 return OUT;
             }
 
             half4 frag(Varyings IN) : SV_Target
             {
-                half4 color = _RimColor;
-                return color;
+                //calculating dot product between mainlight and vertex normal
+                Light mainLight = GetMainLight();
+                float3 vertexNormal = normalize(IN.normalWS);
+                float3 lightDirection = normalize(mainLight.direction);
+                float VNdotLD = saturate(dot(vertexNormal, lightDirection));
+                float lightValue = step(_ShadeThresh, VNdotLD);
+
+                half4 finalColor = lerp(
+                    _RimColor,
+                    _LineColor,
+                    lightValue
+                    );
+                return finalColor;
             }
             ENDHLSL
         }
