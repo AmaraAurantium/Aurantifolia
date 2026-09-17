@@ -45,11 +45,9 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
-    m_Floats:
-    - _RimThickness: 5
-    - _RimThicknessMultiplier: 0.001
-    - _ShadeThresh: 0.1
-    m_Colors: []
+    m_Floats: []
+    m_Colors:
+    - _LineColor: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &5331076822598021802

@@ -5,13 +5,13 @@ Shader "Custom/UnlitURP01"
         [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [MainTexture] _BaseTex("Lit Texture", 2D) = "white" {}
         _ShadeTex("Shade Texture", 2D) = "black" {} //unimplemented
-        _ShadeThresh("Shade Threshold", Float) = 0.3
+        _ShadeThresh("Shade Threshold", Float) = 0.1
 
         //Metallic, Rimlight, Reflection mask
         _EffectTex("Effects Texture", 2D) = "green"{} //unimplemented
 
         //Rimlight Settings 
-        _RimThickness("Rimlight Thickness", Float) = 5
+        _RimThickness("Rimlight Thickness", Float) = 10
         _RimThicknessMultiplier("Rimlight Thickness Multiplier", Float) = 0.001
         _RimColor("Rimlight Color", Color) = (1, 1, 1, 1)
         _LineColor("Secondary Line Color", Color) = (1, 1, 1, 0) 
@@ -89,24 +89,27 @@ Shader "Custom/UnlitURP01"
             //Fragment Shader
             half4 frag(Varyings IN) : SV_Target
             {
+                
+                //calculating dot product between mainlight and vertex normal
+                Light mainLight = GetMainLight();
+                float3 vertexNormal = normalize(IN.normalWS);
+                float3 lightDirection = normalize(mainLight.direction);
+                half4 lightColor = half4(mainLight.color, 1.0);
+                float VNdotLD = saturate(dot(vertexNormal, lightDirection));
+                float lightValue = step(_ShadeThresh, VNdotLD);
+
                 //base lit color
                 half4 baseColor = SAMPLE_TEXTURE2D(
                                 _BaseTex,
                                 sampler_BaseTex,
                                 IN.uv
-                                ) * _BaseColor;
+                                ) *_BaseColor * lightColor;
                 // shadow color
                 half4 shadowColor = SAMPLE_TEXTURE2D(
                                 _ShadeTex,
                                 sampler_ShadeTex,
                                 IN.uv
-                                ) * _BaseColor;
-                //calculating dot product between mainlight and vertex normal
-                Light mainLight = GetMainLight();
-                float3 vertexNormal = normalize(IN.normalWS);
-                float3 lightDirection = normalize(mainLight.direction);
-                float VNdotLD = saturate(dot(vertexNormal, lightDirection));
-                float lightValue = step(_ShadeThresh, VNdotLD);
+                                ) * _BaseColor * lightColor;
 
                 //combined shadow and base color
                 half4 finalColor = lerp(
@@ -182,7 +185,10 @@ Shader "Custom/UnlitURP01"
                     0
                     );
                 float rimMask = mask.g;
-                float3 extrusionAmount = IN.normalOS * _RimThickness  * _RimThicknessMultiplier * rimMask;
+                //shifting the hull in the opposite direction of the light
+                Light mainLight = GetMainLight();
+                float3 lightDirection = normalize(mainLight.direction);
+                float3 extrusionAmount = -1 * lightDirection * _RimThickness  * _RimThicknessMultiplier * rimMask;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + extrusionAmount) ;
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
                 OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
@@ -196,7 +202,7 @@ Shader "Custom/UnlitURP01"
                 float3 vertexNormal = normalize(IN.normalWS);
                 float3 lightDirection = normalize(mainLight.direction);
                 float VNdotLD = saturate(dot(vertexNormal, lightDirection));
-                float lightValue = step(_ShadeThresh*0.01, VNdotLD);
+                float lightValue = step(_ShadeThresh, VNdotLD);
 
                 half4 finalColor = lerp(
                     _RimColor,
