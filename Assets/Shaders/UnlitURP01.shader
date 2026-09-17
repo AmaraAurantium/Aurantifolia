@@ -196,13 +196,15 @@ Shader "Custom/UnlitURP01"
                 float3 vertexNormal = normalize(IN.normalWS);
                 float3 lightDirection = normalize(mainLight.direction);
                 float VNdotLD = saturate(dot(vertexNormal, lightDirection));
-                float lightValue = step(_ShadeThresh, VNdotLD);
+                float lightValue = step(_ShadeThresh*0.01, VNdotLD);
 
                 half4 finalColor = lerp(
                     _RimColor,
                     _LineColor,
                     lightValue
                     );
+
+                clip(finalColor.a - 0.001);
                 return finalColor;
             }
             ENDHLSL
