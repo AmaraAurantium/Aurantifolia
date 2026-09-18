@@ -72,6 +72,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _ShadePat:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _ShadeTex:
         m_Texture: {fileID: 2800000, guid: cafc29849175246ce8f117093f223dcd, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -118,7 +122,10 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimThickness: 20
+    - _RimNoiseMag: 0.7
+    - _RimNoiseScale: 20
+    - _RimNoiseVelocity: 0.1
+    - _RimThickness: 50
     - _RimThicknessMultiplier: 0.001
     - _SampleGI: 0
     - _ShadeThresh: 0.3

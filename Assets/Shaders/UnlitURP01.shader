@@ -2,18 +2,28 @@ Shader "Custom/UnlitURP01"
 {
     Properties
     {
-        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
-        [MainTexture] _BaseTex("Lit Texture", 2D) = "white" {}
-        _ShadeTex("Shade Texture", 2D) = "black" {} //unimplemented
-        _ShadeThresh("Shade Threshold", Float) = 0.1
+        [Header (Base (Lit) Settings)][Space(2)]
+        [MainColor] _BaseColor("Color", Color) = (1, 1, 1, 1)
+        [MainTexture] _BaseTex("Texture", 2D) = "white" {}
+
+        //Shade Settings
+        [Space(5)][Header (Shade Settings)][Space(2)]
+        _ShadeTex("Texture", 2D) = "black" {}
+        _ShadeThresh("Threshold", Float) = 0.1
+        _ShadePat("Pattern", 2D) = "white" {}
 
         //Metallic, Rimlight, Reflection mask
+        [Space(5)][Header (Effect Masking)][Space(2)]
         _EffectTex("Effects Texture", 2D) = "green"{} //unimplemented
 
-        //Rimlight Settings 
-        _RimThickness("Rimlight Thickness", Float) = 10
-        _RimThicknessMultiplier("Rimlight Thickness Multiplier", Float) = 0.001
-        _RimColor("Rimlight Color", Color) = (1, 1, 1, 1)
+        //Rimlight Settings
+        [Space(5)][Header (Rimlight Settings)][Space(2)]
+        _RimThickness("Thickness", Float) = 20
+        _RimThicknessMultiplier("Thickness Multiplier", Float) = 0.001
+        _RimNoiseVelocity ("Noise Velocity", Float) = 0.1
+        _RimNoiseMag ("Noise Magnitude", Range(0.0, 1.0)) = 0.7
+        _RimNoiseScale ("Noise Scale", Float) = 20
+        _RimColor("Color", Color) = (1, 0.6, 1, 1)
         _LineColor("Secondary Line Color", Color) = (1, 1, 1, 0) 
     }
 
@@ -61,6 +71,8 @@ Shader "Custom/UnlitURP01"
             SAMPLER(sampler_BaseTex);
             TEXTURE2D(_ShadeTex);
             SAMPLER(sampler_ShadeTex);
+            TEXTURE2D(_ShadePat);
+            SAMPLER(sampler_ShadePat);
             TEXTURE2D(_EffectTex);
             SAMPLER(sampler_EffectTex);
 
@@ -71,8 +83,12 @@ Shader "Custom/UnlitURP01"
                 float _ShadeThresh;
                 float _RimThickness;
                 float _RimThicknessMultiplier;
+                float _RimNoiseVelocity;
+                float _RimNoiseMag;
+                float _RimNoiseScale;
                 float4 _BaseTex_ST;
                 float4 _ShadeTexST_ST;
+                float4 _ShadePat_ST;
                 float4 _EffectTex_ST;
             CBUFFER_END
 
@@ -160,8 +176,11 @@ Shader "Custom/UnlitURP01"
             SAMPLER(sampler_BaseTex);
             TEXTURE2D(_ShadeTex);
             SAMPLER(sampler_ShadeTex);
+            TEXTURE2D(_ShadePat);
+            SAMPLER(sampler_ShadePat);
             TEXTURE2D(_EffectTex);
             SAMPLER(sampler_EffectTex);
+
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -170,10 +189,50 @@ Shader "Custom/UnlitURP01"
                 float _ShadeThresh;
                 float _RimThickness;
                 float _RimThicknessMultiplier;
+                float _RimNoiseVelocity;
+                float _RimNoiseMag;
+                float _RimNoiseScale;
                 float4 _BaseTex_ST;
                 float4 _ShadeTexST_ST;
+                float4 _ShadePat_ST;
                 float4 _EffectTex_ST;
             CBUFFER_END
+
+            //noise generationv
+
+            float Random2D(float2 p)
+            {
+                return frac(
+                    sin(dot(p, float2(12.9898, 78.233)))
+                    * 43758.5453
+                );
+            }
+
+            float ValueNoise2D(float2 q)
+            {
+                // Integer grid cell
+                float2 cell = floor(q);
+
+                // Position inside that cell: 0 -> 1
+                float2 local = frac(q);
+
+                // Random value at each corner
+                float a = Random2D(cell);
+                float b = Random2D(cell + float2(1.0, 0.0));
+                float c = Random2D(cell + float2(0.0, 1.0));
+                float d = Random2D(cell + float2(1.0, 1.0));
+
+                // Smooth interpolation curve
+                float2 smoothUV =
+                    local * local * (3.0 - 2.0 * local);
+
+                // Interpolate horizontally
+                float bottom = lerp(a, b, smoothUV.x);
+                float top    = lerp(c, d, smoothUV.x);
+
+                // Then vertically
+                return lerp(bottom, top, smoothUV.y);
+            }
 
             Varyings vert(Attributes IN)
             {
@@ -185,10 +244,19 @@ Shader "Custom/UnlitURP01"
                     0
                     );
                 float rimMask = mask.g;
+                // Animate the noise by modifying the UV over time
+                float rimUpdateSpeed = 10 * _RimNoiseVelocity;
+                float2 animateMultiplier = IN.uv * _RimNoiseScale
+                                         + float2(_Time.y * rimUpdateSpeed,
+                                                  _Time.y * rimUpdateSpeed * 1.5);
+                
+                // Calculate raw noise value
+                float noise = (1 -_RimNoiseMag) + _RimNoiseMag * ValueNoise2D(animateMultiplier);
+
                 //shifting the hull in the opposite direction of the light
                 Light mainLight = GetMainLight();
                 float3 lightDirection = normalize(mainLight.direction);
-                float3 extrusionAmount = -1 * lightDirection * _RimThickness  * _RimThicknessMultiplier * rimMask;
+                float3 extrusionAmount = -1 * lightDirection * _RimThickness * noise * _RimThicknessMultiplier * rimMask;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz + extrusionAmount) ;
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
                 OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
