@@ -14,7 +14,11 @@ Shader "Custom/UnlitURP01"
 
         //Metallic, Rimlight, Reflection mask
         [Space(5)][Header (Effect Masking)][Space(2)]
-        _EffectTex("Effects Texture", 2D) = "green"{} //unimplemented
+        _EffectTex("Effects Texture", 2D) = "green"{} 
+        _MetalTintTex("Metallic Tint (Additive)", 2D) = "white" {}
+        _AnisoPow("Aniso Power", Float) = 0.5
+        _AnisoIntensity("Aniso Intensity", Float) = 0.5
+        _AnisoThresh("Aniso Threshold", Float) = 0.1
 
         //Rimlight Settings
         [Space(5)][Header (Rimlight Settings)][Space(2)]
@@ -65,6 +69,7 @@ Shader "Custom/UnlitURP01"
                 float4 positionHCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
+                float3 positionWS : TEXCOORD2;
             };
 
             TEXTURE2D(_BaseTex);
@@ -75,6 +80,8 @@ Shader "Custom/UnlitURP01"
             SAMPLER(sampler_ShadePat);
             TEXTURE2D(_EffectTex);
             SAMPLER(sampler_EffectTex);
+            TEXTURE2D(_MetalTintTex);
+            SAMPLER(sampler_MetalTintTex);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -86,10 +93,14 @@ Shader "Custom/UnlitURP01"
                 float _RimNoiseVelocity;
                 float _RimNoiseMag;
                 float _RimNoiseScale;
+                float _AnisoPow;
+                float _AnisoIntensity;
+                float _AnisoThresh;
                 float4 _BaseTex_ST;
                 float4 _ShadeTexST_ST;
                 float4 _ShadePat_ST;
                 float4 _EffectTex_ST;
+                float4 _MetalTintTex_ST;
             CBUFFER_END
 
             //Vertex Shader
@@ -97,6 +108,7 @@ Shader "Custom/UnlitURP01"
             {
                 Varyings OUT;
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseTex);
                 OUT.normalWS = TransformObjectToWorldNormal(IN.normalOS);
                 return OUT;
@@ -105,14 +117,34 @@ Shader "Custom/UnlitURP01"
             //Fragment Shader
             half4 frag(Varyings IN) : SV_Target
             {
-                
+                //get blue&red pass of effects tex
+                half4 mask = SAMPLE_TEXTURE2D_LOD(
+                    _EffectTex,
+                    sampler_EffectTex,
+                    IN.uv,
+                    0
+                    );
+                float metalMask = mask.b;
+                float anisoMask = mask.r;
+
                 //calculating dot product between mainlight and vertex normal
                 Light mainLight = GetMainLight();
                 float3 vertexNormal = normalize(IN.normalWS);
                 float3 lightDirection = normalize(mainLight.direction);
+                float3 viewDirection = normalize (GetWorldSpaceViewDir(IN.positionWS));
                 half4 lightColor = half4(mainLight.color, 1.0);
                 float VNdotLD = saturate(dot(vertexNormal, lightDirection));
                 float lightValue = step(_ShadeThresh, VNdotLD);
+                float2 metallicUV = pow (dot(vertexNormal, normalize(viewDirection + lightDirection)), 2);
+                float anisoFresnel = pow((1.0 - saturate(dot(vertexNormal, viewDirection))), _AnisoPow) * _AnisoIntensity;
+                float anisoShade = saturate(1-anisoFresnel)* anisoMask * VNdotLD;
+                float anisoStepped = step(_AnisoThresh, anisoShade);
+
+                half4 metalicColor = SAMPLE_TEXTURE2D(
+                                _MetalTintTex,
+                                sampler_MetalTintTex,
+                                metallicUV
+                                );
 
                 //base lit color
                 half4 baseColor = SAMPLE_TEXTURE2D(
@@ -126,15 +158,22 @@ Shader "Custom/UnlitURP01"
                                 sampler_ShadeTex,
                                 IN.uv
                                 ) * _BaseColor * lightColor;
-
                 //combined shadow and base color
                 half4 finalColor = lerp(
                     shadowColor,
                     baseColor,
                     lightValue
                     );
+                half4 metalShade = finalColor + metalicColor;
 
-                return finalColor;
+                //combine base and metal
+                half4 metalMixColor = lerp(
+                    finalColor + 0.5 * anisoStepped * lightColor,
+                    metalShade,
+                    metalMask
+                    );
+
+                return metalMixColor;
             }
             ENDHLSL
         }
@@ -180,7 +219,8 @@ Shader "Custom/UnlitURP01"
             SAMPLER(sampler_ShadePat);
             TEXTURE2D(_EffectTex);
             SAMPLER(sampler_EffectTex);
-
+            TEXTURE2D(_MetalTintTex);
+            SAMPLER(sampler_MetalTintTex);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
@@ -196,6 +236,7 @@ Shader "Custom/UnlitURP01"
                 float4 _ShadeTexST_ST;
                 float4 _ShadePat_ST;
                 float4 _EffectTex_ST;
+                float4 _MetalTintTex_ST;
             CBUFFER_END
 
             //noise generationv
@@ -212,24 +253,19 @@ Shader "Custom/UnlitURP01"
             {
                 // Integer grid cell
                 float2 cell = floor(q);
-
                 // Position inside that cell: 0 -> 1
                 float2 local = frac(q);
-
                 // Random value at each corner
                 float a = Random2D(cell);
                 float b = Random2D(cell + float2(1.0, 0.0));
                 float c = Random2D(cell + float2(0.0, 1.0));
                 float d = Random2D(cell + float2(1.0, 1.0));
-
                 // Smooth interpolation curve
                 float2 smoothUV =
                     local * local * (3.0 - 2.0 * local);
-
                 // Interpolate horizontally
                 float bottom = lerp(a, b, smoothUV.x);
                 float top    = lerp(c, d, smoothUV.x);
-
                 // Then vertically
                 return lerp(bottom, top, smoothUV.y);
             }

@@ -49,7 +49,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EffectTex:
-        m_Texture: {fileID: 2800000, guid: 8e8f9e03358be4f76b9b5a6856bf5068, type: 3}
+        m_Texture: {fileID: 2800000, guid: 43075b494d12d459ba3e253a1bc57a75, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
@@ -58,6 +58,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: a54ba6a11d021429ba7df9321248ad9e, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetalTintTex:
+        m_Texture: {fileID: 2800000, guid: 4ba0ddb8707cd41bbac62b40d6cd5619, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -101,6 +105,9 @@ Material:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 0
     - _AlphaToMask: 0
+    - _AnisoIntensity: 0.5
+    - _AnisoPow: 0.5
+    - _AnisoThresh: 0.1
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
@@ -117,6 +124,8 @@ Material:
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _MetalHighThresh: 0.1
+    - _MetalMidThresh: 0.5
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005

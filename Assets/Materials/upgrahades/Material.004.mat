@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: body
+  m_Name: Material.004
   m_Shader: {fileID: 4800000, guid: 7a65b3510633d904dadb335e373e2b38, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -15,7 +15,7 @@ Material:
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 1
+  m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses:
@@ -25,14 +25,18 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _BaseMap:
-        m_Texture: {fileID: 2800000, guid: d662505236f9346f7a8a5d2bac808a36, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BaseTex:
-        m_Texture: {fileID: 2800000, guid: d662505236f9346f7a8a5d2bac808a36, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ClearCoatMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
@@ -49,7 +53,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EffectTex:
-        m_Texture: {fileID: 2800000, guid: 43075b494d12d459ba3e253a1bc57a75, type: 3}
+        m_Texture: {fileID: 2800000, guid: 29252f0aa8a634f1787d85343c495747, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _EmissionMap:
@@ -57,7 +61,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: d662505236f9346f7a8a5d2bac808a36, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetalTintTex:
@@ -77,11 +81,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShadePat:
-        m_Texture: {fileID: 2800000, guid: 392dbe46884de4056b1425ae0ccee914, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ShadeTex:
-        m_Texture: {fileID: 2800000, guid: d49a5ce2824ca4498a27710aaef1bad9, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _SpecGlossMap:
@@ -112,51 +116,51 @@ Material:
     - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
     - _BumpScale: 1
+    - _ClearCoat: 0
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _Cull: 0
+    - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
-    - _GlossMapScale: 0
-    - _Glossiness: 0
-    - _GlossyReflections: 0
-    - _MetalHighThresh: 0.1
-    - _MetalMidThresh: 0.5
-    - _Metallic: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _Metallic: 1
+    - _Mode: 0
     - _OcclusionStrength: 1
-    - _Parallax: 0.005
+    - _Parallax: 0.02
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimNoiseMag: 1
-    - _RimNoiseScale: 28.58
+    - _RimNoiseMag: 0.7
+    - _RimNoiseScale: 20
     - _RimNoiseVelocity: 0.1
-    - _RimThickness: 20
+    - _RimThickness: 0.2
     - _RimThicknessMultiplier: 0.001
-    - _SampleGI: 0
     - _ShadeThresh: 0.1
-    - _Smoothness: 0.5
+    - _Smoothness: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _UVSec: 0
     - _WorkflowMode: 1
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _BaseColor: {r: 0.18867922, g: 0.18867922, b: 0.18867922, a: 1}
+    - _Color: {r: 0.9063317, g: 0.9063317, b: 0.9063317, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _LineColor: {r: 0, g: 0, b: 0, a: 0}
+    - _LineColor: {r: 1, g: 1, b: 1, a: 0}
     - _RimColor: {r: 1, g: 0.6, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!114 &5331076822598021802
+--- !u!114 &2958317098000489185
 MonoBehaviour:
   m_ObjectHideFlags: 11
   m_CorrespondingSourceObject: {fileID: 0}
