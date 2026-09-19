@@ -16,9 +16,11 @@ Shader "Custom/UnlitURP01"
         [Space(5)][Header (Effect Masking)][Space(2)]
         _EffectTex("Effects Texture", 2D) = "green"{} 
         _MetalTintTex("Metallic Tint (Additive)", 2D) = "white" {}
-        _AnisoPow("Aniso Power", Float) = 0.5
-        _AnisoIntensity("Aniso Intensity", Float) = 0.5
-        _AnisoThresh("Aniso Threshold", Float) = 0.1
+
+        [Space(5)][Header (Anisotropic Settings)][Space(2)]
+        _AnisoPow("Power", Float) = 3
+        _AnisoIntensity("Intensity", Float) = 6.3
+        _AnisoThresh("Threshold", Float) = 0.6
 
         //Rimlight Settings
         [Space(5)][Header (Rimlight Settings)][Space(2)]
@@ -140,12 +142,6 @@ Shader "Custom/UnlitURP01"
                 float anisoShade = saturate(1-anisoFresnel)* anisoMask * VNdotLD;
                 float anisoStepped = step(_AnisoThresh, anisoShade);
 
-                half4 metalicColor = SAMPLE_TEXTURE2D(
-                                _MetalTintTex,
-                                sampler_MetalTintTex,
-                                metallicUV
-                                );
-
                 //base lit color
                 half4 baseColor = SAMPLE_TEXTURE2D(
                                 _BaseTex,
@@ -158,15 +154,23 @@ Shader "Custom/UnlitURP01"
                                 sampler_ShadeTex,
                                 IN.uv
                                 ) * _BaseColor * lightColor;
+
                 //combined shadow and base color
                 half4 finalColor = lerp(
                     shadowColor,
                     baseColor,
                     lightValue
                     );
-                half4 metalShade = finalColor + metalicColor;
 
                 //combine base and metal
+                half4 metalicColor = SAMPLE_TEXTURE2D(
+                                _MetalTintTex,
+                                sampler_MetalTintTex,
+                                metallicUV
+                                );
+
+                half4 metalShade = finalColor + metalicColor;
+
                 half4 metalMixColor = lerp(
                     finalColor + 0.5 * anisoStepped * lightColor,
                     metalShade,
@@ -232,6 +236,9 @@ Shader "Custom/UnlitURP01"
                 float _RimNoiseVelocity;
                 float _RimNoiseMag;
                 float _RimNoiseScale;
+                float _AnisoPow;
+                float _AnisoIntensity;
+                float _AnisoThresh;
                 float4 _BaseTex_ST;
                 float4 _ShadeTexST_ST;
                 float4 _ShadePat_ST;
@@ -239,7 +246,8 @@ Shader "Custom/UnlitURP01"
                 float4 _MetalTintTex_ST;
             CBUFFER_END
 
-            //noise generationv
+
+            //noise generation
 
             float Random2D(float2 p)
             {

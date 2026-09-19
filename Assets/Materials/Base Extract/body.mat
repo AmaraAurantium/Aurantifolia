@@ -107,7 +107,7 @@ Material:
     - _AlphaToMask: 0
     - _AnisoIntensity: 6.3
     - _AnisoPow: 3
-    - _AnisoThresh: 0.2
+    - _AnisoThresh: 0.6
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BlendOp: 0
