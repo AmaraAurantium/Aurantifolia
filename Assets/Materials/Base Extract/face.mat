@@ -134,7 +134,7 @@ Material:
     - _RimNoiseMag: 0.7
     - _RimNoiseScale: 20
     - _RimNoiseVelocity: 0.1
-    - _RimThickness: 20
+    - _RimThickness: 10
     - _RimThicknessMultiplier: 0.001
     - _SampleGI: 0
     - _ShadeThresh: 0.1

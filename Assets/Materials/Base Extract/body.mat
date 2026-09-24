@@ -131,10 +131,10 @@ Material:
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
-    - _RimNoiseMag: 1
-    - _RimNoiseScale: 28.58
+    - _RimNoiseMag: 0.7
+    - _RimNoiseScale: 20
     - _RimNoiseVelocity: 0.1
-    - _RimThickness: 20
+    - _RimThickness: 10
     - _RimThicknessMultiplier: 0.001
     - _SampleGI: 0
     - _ShadeThresh: 0.1
